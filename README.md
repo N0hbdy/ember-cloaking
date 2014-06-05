@@ -1,4 +1,16 @@
-ember-cloaking
+What is this?
+================
+This is a fork of eviltrout's [ember-cloak](https://github.com/eviltrout/ember-cloaking) library, using a search and replace to change:
+
+1. top -> left
+2. bottom -> right
+3. height -> width
+
+(with their respective capitalizations).  Like the name implies, its for horizontal scrolling instead of vertical scrolling.
+
+The only additional changes made are my own need specific - namely using `objectAt(index)` instead of `[index]` for looking up `childViews` for a lazy controller, if `objectAt` exists.
+
+ember-horizontal-cloaking
 ==============
 
 Support for not rendering offscreen views in an Ember app for performance and
