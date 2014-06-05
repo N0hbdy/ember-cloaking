@@ -10,6 +10,8 @@ This is a fork of eviltrout's [ember-cloak](https://github.com/eviltrout/ember-c
 
 The only additional changes made are my own need specific - namely using `objectAt(index)` instead of `[index]` for looking up `childViews` for a lazy controller, if `objectAt` exists.
 
+The final change was adding events to the specific div based on the id, so that it would properly update on the correct scroll.
+
 ember-horizontal-cloaking
 ==============
 
