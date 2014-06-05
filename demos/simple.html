@@ -27,11 +27,11 @@
       @resource 'scroll'
 
     # random nums for view height
-    random_height = ->
+    random_width = ->
       Math.round( Math.random()*100 + 20 )
 
     # create a lots of crap
-    model =  ( { id: i, height: random_height() } for i in [0..500] )
+    model =  ( { id: i, width: random_width() } for i in [0..500] )
     App.ScrollRoute = Ember.Route.extend
       model: -> model
       actions:
@@ -44,7 +44,7 @@
       templateName: 'item'
 
       didInsertElement: ->
-        @$().css 'height', @get('context.height')
+        @$().css 'width', @get('context.width')
 
   </script>
   <title>Ember Cloaking Test</title>
@@ -60,7 +60,7 @@
   </script>
     <script type="text/x-handlebars" data-template-name="item">
       <div {{action greeting}}>
-        #{{id}} ({{height}}px)
+        #{{id}} ({{width}}px)
       </div>
   </script>
 </body>

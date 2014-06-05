@@ -7,9 +7,9 @@
     @extends Ember.CollectionView
     @namespace Ember
   **/
-  Ember.CloakedCollectionView = Ember.CollectionView.extend({
-    topVisible: null,
-    bottomVisible: null,
+  Ember.CloakedHorizontalCollectionView = Ember.CollectionView.extend({
+    leftVisible: null,
+    rightVisible: null,
     offsetFixedElement: null,
 
     init: function() {
@@ -26,7 +26,7 @@
         cloaks: cloakView,
         preservesContext: this.get('preservesContext') === "true",
         cloaksController: this.get('itemController'),
-        defaultHeight: this.get('defaultHeight'),
+        defaultWidth: this.get('defaultWidth'),
 
         init: function() {
           this._super();
@@ -48,50 +48,50 @@
 
 
     /**
-      If the topmost visible view changed, we will notify the controller if it has an appropriate hook.
+      If the leftmost visible view changed, we will notify the controller if it has an appropriate hook.
 
-      @method _topVisibleChanged
-      @observes topVisible
+      @method _leftVisibleChanged
+      @observes leftVisible
     **/
-    _topVisibleChanged: function() {
+    _leftVisibleChanged: function() {
       var controller = this.get('controller');
-      if (controller.topVisibleChanged) { controller.topVisibleChanged(this.get('topVisible')); }
-    }.observes('topVisible'),
+      if (controller.leftVisibleChanged) { controller.leftVisibleChanged(this.get('leftVisible')); }
+    }.observes('leftVisible'),
 
     /**
-      If the bottommost visible view changed, we will notify the controller if it has an appropriate hook.
+      If the rightmost visible view changed, we will notify the controller if it has an appropriate hook.
 
-      @method _bottomVisible
-      @observes bottomVisible
+      @method _rightVisible
+      @observes rightVisible
     **/
-    _bottomVisible: function() {
+    _rightVisible: function() {
       var controller = this.get('controller');
-      if (controller.bottomVisibleChanged) { controller.bottomVisibleChanged(this.get('bottomVisible')); }
-    }.observes('bottomVisible'),
+      if (controller.rightVisibleChanged) { controller.rightVisibleChanged(this.get('rightVisible')); }
+    }.observes('rightVisible'),
 
     /**
-      Binary search for finding the topmost view on screen.
+      Binary search for finding the leftmost view on screen.
 
-      @method findTopView
+      @method findLeftView
       @param {Array} childViews the childViews to search through
-      @param {Number} windowTop The top of the viewport to search against
+      @param {Number} windowLeft The left of the viewport to search against
       @param {Number} min The minimum index to search through of the child views
       @param {Number} max The max index to search through of the child views
-      @returns {Number} the index into childViews of the topmost view
+      @returns {Number} the index into childViews of the leftmost view
     **/
-    findTopView: function(childViews, viewportTop, min, max) {
+    findLeftView: function(childViews, viewportLeft, min, max) {
       if (max < min) { return min; }
 
       var mid = Math.floor((min + max) / 2),
           // in case of not full-window scrolling
-          scrollOffset = this.get('wrapperTop') >> 0,
+          scrollOffset = this.get('wrapperLeft') >> 0,
           $view = childViews[mid].$(),
-          viewBottom = $view.position().top + scrollOffset + $view.height();
+          viewRight = $view.position().left + scrollOffset + $view.width();
 
-      if (viewBottom > viewportTop) {
-        return this.findTopView(childViews, viewportTop, min, mid-1);
+      if (viewRight > viewportLeft) {
+        return this.findLeftView(childViews, viewportLeft, min, mid-1);
       } else {
-        return this.findTopView(childViews, viewportTop, mid+1, max);
+        return this.findLeftView(childViews, viewportLeft, mid+1, max);
       }
     },
 
@@ -110,63 +110,69 @@
           onscreen = [],
           // calculating viewport edges
           $w = $(window),
-          windowHeight = this.get('wrapperHeight') || ( window.innerHeight ? window.innerHeight : $w.height() ),
-          windowTop = this.get('wrapperTop') || $w.scrollTop(),
-          slack = Math.round(windowHeight * this.get('slackRatio')),
-          viewportTop = windowTop - slack,
-          windowBottom = windowTop + windowHeight,
-          viewportBottom = windowBottom + slack,
-          topView = this.findTopView(childViews, viewportTop, 0, childViews.length-1),
-          bodyHeight = this.get('wrapperHeight') ? this.$().height() : $('body').height(),
-          bottomView = topView,
+          windowWidth = this.get('wrapperWidth') || ( window.innerWidth ? window.innerWidth : $w.width() ),
+          windowLeft = this.get('wrapperLeft') || $w.scrollLeft(),
+          slack = Math.round(windowWidth * this.get('slackRatio')),
+          viewportLeft = windowLeft - slack,
+          windowRight = windowLeft + windowWidth,
+          viewportRight = windowRight + slack,
+          leftView = this.findLeftView(childViews, viewportLeft, 0, childViews.length-1),
+          bodyWidth = this.get('wrapperWidth') ? this.$().width() : $('body').width(),
+          rightView = leftView,
           offsetFixedElement = this.get('offsetFixedElement');
 
-      if (windowBottom > bodyHeight) { windowBottom = bodyHeight; }
-      if (viewportBottom > bodyHeight) { viewportBottom = bodyHeight; }
+      if (windowRight > bodyWidth) { windowRight = bodyWidth; }
+      if (viewportRight > bodyWidth) { viewportRight = bodyWidth; }
 
       if (offsetFixedElement) {
-        windowTop += (offsetFixedElement.outerHeight(true) || 0);
+        windowLeft += (offsetFixedElement.outerWidth(true) || 0);
       }
-      // Find the bottom view and what's onscreen
-      while (bottomView < childViews.length) {
-        var view = childViews[bottomView],
-          $view = view.$(),
+      // Find the right view and what's onscreen
+      while (rightView < childViews.length) {
+        var view;
+        if (childViews.objectAt) {
+          // Lazy load what we need
+          view = childViews.objectAt(rightView);
+        } else {
+          view = childViews[rightView];
+        }
+        var $view = view.$(),
           // in case of not full-window scrolling
-          scrollOffset = this.get('wrapperTop') >> 0,
-          viewTop = $view.position().top + scrollOffset,
-          viewBottom = viewTop + $view.height();
+          scrollOffset = this.get('wrapperLeft') >> 0,
+          viewLeft = $view.position().left + scrollOffset,
+          viewRight = viewLeft + $view.width();
 
-        if (viewTop > viewportBottom) { break; }
+        if (viewLeft > viewportRight) { break; }
         toUncloak.push(view);
 
-        if (viewBottom > windowTop && viewTop <= windowBottom) {
+        if (viewRight > windowLeft && viewLeft <= windowRight) {
           onscreen.push(view.get('content'));
         }
 
-        bottomView++;
+        rightView++;
       }
-      if (bottomView >= childViews.length) { bottomView = childViews.length - 1; }
+      if (rightView >= childViews.length) { rightView = childViews.length - 1; }
 
       // If our controller has a `sawObjects` method, pass the on screen objects to it.
       var controller = this.get('controller');
       if (onscreen.length) {
-        this.setProperties({topVisible: onscreen[0], bottomVisible: onscreen[onscreen.length-1]});
+        this.setProperties({leftVisible: onscreen[0], rightVisible: onscreen[onscreen.length-1]});
         if (controller && controller.sawObjects) {
           Em.run.schedule('afterRender', function() {
             controller.sawObjects(onscreen);
           });
         }
       } else {
-        this.setProperties({topVisible: null, bottomVisible: null});
+        this.setProperties({leftVisible: null, rightVisible: null});
       }
 
-      var toCloak = childViews.slice(0, topView).concat(childViews.slice(bottomView+1));
+      var toCloak = childViews.slice(0, leftView).concat(childViews.slice(rightView+1));
       Em.run.schedule('afterRender', function() {
         toUncloak.forEach(function (v) { v.uncloak(); });
         toCloak.forEach(function (v) { v.cloak(); });
       });
 
-      for (var j=bottomView; j<childViews.length; j++) {
+      for (var j=rightView; j<childViews.length; j++) {
         var checkView = childViews[j];
         if (!checkView._containedView) {
           if (!checkView.get('loading')) {
@@ -195,8 +201,10 @@
 
       $(document).bind('touchmove.ember-cloak', onScrollMethod);
       $(window).bind('scroll.ember-cloak', onScrollMethod);
-      this.addObserver('wrapperTop', self, onScrollMethod);
-      this.addObserver('wrapperHeight', self, onScrollMethod);
+      $('#' + this.get("elementId")).bind("scroll.ember-cloak", onScrollMethod);
+      $('#' + this.get("elementId")).bind("touchmove.ember-cloak", onScrollMethod);
+      this.addObserver('wrapperLeft', self, onScrollMethod);
+      this.addObserver('wrapperWidth', self, onScrollMethod);
       this.addObserver('content.@each', self, onScrollMethod);
       this.scrollTriggered();
 
@@ -287,11 +295,11 @@
       var self = this;
 
       if (this._containedView && (this._state || this.state) === 'inDOM') {
-        var style = 'height: ' + this.$().height() + 'px;';
+        var style = 'width: ' + this.$().width() + 'px;';
         this.set('style', style);
         this.$().prop('style', style);
 
-        // We need to remove the container after the height of the element has taken
+        // We need to remove the container after the width of the element has taken
         // effect.
         Ember.run.schedule('afterRender', function() {
           if(self._containedView){
@@ -312,15 +320,15 @@
 
     didInsertElement: function(){
       if (!this._containedView) {
-        // setting default height
-        // but do not touch if height already defined
-        if(!this.$().height()){
-          var defaultHeight = 100;
-          if(this.get('defaultHeight')) {
-            defaultHeight = this.get('defaultHeight');
+        // setting default width
+        // but do not touch if width already defined
+        if(!this.$().width()){
+          var defaultWidth = 100;
+          if(this.get('defaultWidth')) {
+            defaultWidth = this.get('defaultWidth');
           }
 
-          this.$().css('height', defaultHeight);
+          this.$().css('width', defaultWidth);
         }
       }
      },
@@ -349,7 +357,7 @@
 
 
 
-  Ember.Handlebars.registerHelper('cloaked-collection', function(options) {
+  Ember.Handlebars.registerHelper('cloaked-horizontal-collection', function(options) {
     var hash = options.hash,
         types = options.hashTypes;
 
@@ -359,7 +367,7 @@
         delete hash[prop];
       }
     }
-    return Ember.Handlebars.helpers.view.call(this, Ember.CloakedCollectionView, options);
+    return Ember.Handlebars.helpers.view.call(this, Ember.CloakedHorizontalCollectionView, options);
   });
 
 })();
